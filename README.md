@@ -26,11 +26,20 @@ Dobby is a self-hosted AI agent daemon written in C. It runs continuously in the
 
 ## Working Use Cases
 
+### Dashboard Overview
+<img src="assets/Dashboard-Overview.png" alt="Dashboard Overview" width="50%" />
+
+### Dashboard Chat
+<img src="assets/Dashboard-Chat.png" alt="Dashboard Chat" width="50%" />
+
+### Dashboard Tools
+<img src="assets/Dashboard-Tools.png" alt="Dashboard Tools" width="50%" />
+
 ### CLI Interface
-![Dobby CLI](assets/Dobby-Cli.png)
+<img src="assets/Dobby-Cli.png" alt="Dobby CLI" width="50%" />
 
 ### Email Interface
-![Dobby Email](assets/Email.png)
+<img src="assets/Email.png" alt="Dobby Email" width="50%" />
 
 ---
 
