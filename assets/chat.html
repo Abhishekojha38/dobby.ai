@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dobby</title>
+<link rel="icon" href="data:,">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg:        #f6f6f5;
+  --surface:   #ffffff;
+  --border:    #e8e8e5;
+  --border2:   #d2d2ce;
+  --text:      #1c1c1a;
+  --muted:     #888884;
+  --accent:    #4e7a68;
+  --accent-l:  #edf2f0;
+  --accent-m:  #c3d8d2;
+  --red:       #bc3a2e;
+  --red-l:     #fdf0ef;
+  --amber:     #ad7f18;
+  --amber-l:   #fdf6e4;
+  --green:     #2d7a4e;
+  --green-l:   #edf6f2;
+  --blue:      #2b5f8c;
+  --blue-l:    #edf4fb;
+  --r:         10px;
+  --sh:        0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+code{font-family:'DM Mono',monospace}
+
+/* ─── Shell ───────────────────────────────────────── */
+#app{display:grid;grid-template-rows:52px 1fr;height:100vh;overflow:hidden}
+
+/* Topbar */
+#topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:0 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  z-index:50;
+}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;letter-spacing:-.01em}
+.logo-pip{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+#agent-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:2px 9px;border-radius:20px;
+  font-size:11px;font-weight:500;
+  background:var(--green-l);color:var(--green);
+  border:1px solid var(--accent-m);
+}
+#agent-pill.off{background:var(--red-l);color:var(--red);border-color:#f0c0bc}
+#agent-pill .pip{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 2s ease infinite}
+#agent-pill.off .pip{animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+#nav{display:flex;gap:1px;margin-left:8px}
+.tab{padding:5px 13px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;transition:all .12s}
+.tab:hover{background:var(--bg);color:var(--text)}
+.tab.on{background:var(--accent-l);color:var(--accent)}
+
+.tbar-r{margin-left:auto;display:flex;align-items:center;gap:20px}
+.chip{font-size:12px;color:var(--muted)}
+.chip b{color:var(--text);font-weight:500}
+
+/* ─── Main body ───────────────────────────────────── */
+#body{overflow:hidden;display:flex}
+.panel{display:none;width:100%;height:100%;overflow-y:auto;padding:24px}
+.panel.on{display:block}
+#panel-chat{display:none;flex-direction:column;padding:0}
+#panel-chat.on{display:flex}
+
+/* ─── Cards ───────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.ch{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ct{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.ca{font-size:12px;color:var(--accent);cursor:pointer;font-weight:500;border:none;background:none;padding:0}
+.ca:hover{text-decoration:underline}
+.cb{padding:14px 18px}
+.ce{padding:24px 16px;text-align:center;color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.ce .ic{font-size:22px;opacity:.35}
+
+/* Grids */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stk{display:flex;flex-direction:column;gap:14px}
+@media(max-width:880px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ─── Stat tiles ──────────────────────────────────── */
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh)}
+.tl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:7px}
+.tv{font-size:26px;font-weight:300;font-family:'DM Mono',monospace;line-height:1;color:var(--text)}
+.ts{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* ─── Rows ────────────────────────────────────────── */
+.ri{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border)}
+.ri:last-child{border-bottom:none}
+.ric{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ric.g{background:var(--green-l)}.ric.b{background:var(--blue-l)}.ric.a{background:var(--amber-l)}.ric.x{background:var(--bg)}
+.rin{flex:1;min-width:0}
+.rn{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rm{font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr{text-align:right;flex-shrink:0}
+
+/* ─── Badges ──────────────────────────────────────── */
+.bx{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.bg{background:var(--green-l);color:var(--green)}
+.bb{background:var(--blue-l);color:var(--blue)}
+.ba{background:var(--amber-l);color:var(--amber)}
+.bz{background:var(--bg);color:var(--muted)}
+.br{background:var(--red-l);color:var(--red)}
+.bac{background:var(--accent-l);color:var(--accent)}
+
+/* ─── Chat ────────────────────────────────────────── */
+#msgs{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.msg{display:flex;gap:10px;max-width:740px}
+.msg.u{flex-direction:row-reverse;align-self:flex-end}
+.mav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:2px}
+.msg.u .mav{background:var(--accent);color:#fff}
+.msg.a .mav{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.mb{padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.6}
+.msg.u .mb{background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.msg.a .mb{background:var(--surface);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:3px}
+.mt{font-size:11px;color:var(--muted);margin-top:3px}
+.msg.u .mt{text-align:right}
+.tdots{display:flex;gap:3px;padding:2px 0}
+.td{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bob .9s ease infinite}
+.td:nth-child(2){animation-delay:.15s}.td:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+#cform{padding:14px 24px 18px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:9px;align-items:flex-end}
+#cinp{flex:1;resize:none;border:1px solid var(--border2);border-radius:8px;padding:9px 13px;font-family:inherit;font-size:14px;color:var(--text);background:var(--bg);outline:none;min-height:42px;max-height:140px;transition:border-color .12s;scrollbar-width:thin}
+#cinp:focus{border-color:var(--accent)}
+#csend{padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;height:42px;white-space:nowrap;transition:opacity .12s}
+#csend:hover{opacity:.85}
+#csend:disabled{opacity:.45;cursor:default}
+
+/* ─── Email rows ──────────────────────────────────── */
+.erow{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border)}
+.erow:last-child{border-bottom:none}
+.efrom{font-size:13px;font-weight:500;color:var(--text)}
+.esub{font-size:13px;color:var(--muted)}
+.etime{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ─── Metrics ─────────────────────────────────────── */
+.mbar{margin-top:10px}
+.mbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.mbt{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.mbf{height:100%;border-radius:2px;background:var(--accent);transition:width .5s ease}
+.mbf.warn{background:var(--amber)}.mbf.crit{background:var(--red)}
+
+/* Misc */
+.mono{font-family:'DM Mono',monospace}
+.dim{color:var(--muted)}
+.sm{font-size:12px}
+.vchip{font-family:'DM Mono',monospace;font-size:11px;padding:2px 7px;background:var(--bg);color:var(--muted);border:1px solid var(--border);border-radius:4px;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ─ Topbar ─────────────────────────────────────── -->
+<header id="topbar">
+  <div class="logo"><div class="logo-pip"></div>Dobby</div>
+
+  <div id="agent-pill" class="off">
+    <div class="pip"></div>
+    <span id="pill-txt">connecting…</span>
+  </div>
+
+  <nav id="nav">
+    <button class="tab on"  data-p="overview">Overview</button>
+    <button class="tab"     data-p="chat">Chat</button>
+    <button class="tab"     data-p="tasks">Tasks</button>
+    <button class="tab"     data-p="email">Email</button>
+    <button class="tab"     data-p="tools">Tools</button>
+    <button class="tab"     data-p="system">System</button>
+  </nav>
+
+  <div class="tbar-r">
+    <span class="chip">v<span id="tv">—</span></span>
+    <span class="chip">Model: <b id="tm">—</b></span>
+  </div>
+</header>
+
+<!-- ─ Body ───────────────────────────────────────── -->
+<div id="body">
+
+<!-- Overview -->
+<div id="panel-overview" class="panel on">
+  <div class="g4" style="margin-bottom:14px">
+    <div class="tile"><div class="tl">Agent</div><div class="tv" id="ov-st">—</div><div class="ts" id="ov-sv">—</div></div>
+    <div class="tile"><div class="tl">Active Tasks</div><div class="tv" id="ov-tk">0</div><div class="ts">background jobs</div></div>
+    <div class="tile"><div class="tl">tmux Sessions</div><div class="tv" id="ov-tx">0</div><div class="ts">active windows</div></div>
+    <div class="tile"><div class="tl">Bus Queue</div><div class="tv" id="ov-bq">0</div><div class="ts">inbound pending</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="ch"><span class="ct">Tasks</span><button class="ca" onclick="go('tasks')">All →</button></div>
+      <div class="cb" id="ov-tlist"><div class="ce"><div class="ic">📋</div>No active tasks</div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">tmux Sessions</span></div>
+      <div class="cb" id="ov-tmlist"><div class="ce"><div class="ic">🖥</div>No sessions</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Recent Emails</span><button class="ca" onclick="go('email')">All →</button></div>
+      <div class="cb" id="ov-eml"><div class="ce"><div class="ic">✉️</div>No recent emails</div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Channels</span></div>
+      <div class="cb">
+        <div class="ri"><div class="ric g">🖥</div><div class="rin"><div class="rn">CLI</div><div class="rm">Interactive terminal REPL</div></div><span class="bx bg">active</span></div>
+        <div class="ri"><div class="ric b">🌐</div><div class="rin"><div class="rn">HTTP Gateway</div><div class="rm">REST API + web UI</div></div><span class="bx bg">active</span></div>
+        <div class="ri"><div class="ric x">✉️</div><div class="rin"><div class="rn">Email</div><div class="rm">IMAP poll / SMTP reply</div></div><span class="bx bz" id="ov-eml-bx">checking…</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chat -->
+<div id="panel-chat" class="panel">
+  <div id="msgs"></div>
+  <div id="cform">
+    <textarea id="cinp" rows="1" placeholder="Message Dobby…"></textarea>
+    <button id="csend">Send</button>
+  </div>
+</div>
+
+<!-- Tasks -->
+<div id="panel-tasks" class="panel">
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card"><div class="ch"><span class="ct">Current</span></div><div class="cb" id="tk-cur"><div class="ce"><div class="ic">⚡</div>Nothing running</div></div></div>
+    <div class="card"><div class="ch"><span class="ct">Backlog</span></div><div class="cb" id="tk-bkl"><div class="ce"><div class="ic">📬</div>Queue empty</div></div></div>
+    <div class="card"><div class="ch"><span class="ct">Done</span></div><div class="cb" id="tk-don"><div class="ce"><div class="ic">✅</div>No completed tasks</div></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct">tmux Sessions</span></div>
+    <div class="cb" id="tk-tmux"><div class="ce"><div class="ic">🖥</div>No tmux sessions</div></div>
+  </div>
+</div>
+
+<!-- Email -->
+<div id="panel-email" class="panel">
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card"><div class="ch"><span class="ct">Channel Status</span></div><div class="cb" id="eml-status"><div class="ce"><div class="spin"></div></div></div></div>
+    <div class="card"><div class="ch"><span class="ct">Allowed Senders / Recipients</span></div><div class="cb" id="eml-allow"><div class="ce"><div class="spin"></div></div></div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ch"><span class="ct">Received — latest 5</span></div><div class="cb" id="eml-in"><div class="ce"><div class="ic">📥</div>No received emails</div></div></div>
+    <div class="card"><div class="ch"><span class="ct">Sent — latest 5</span></div><div class="cb" id="eml-out"><div class="ce"><div class="ic">📤</div>No sent emails</div></div></div>
+  </div>
+</div>
+
+<!-- Tools -->
+<div id="panel-tools" class="panel">
+  <div class="card">
+    <div class="ch"><span class="ct">Registered Tools</span><span class="vchip" id="tc">—</span></div>
+    <div class="cb" id="tls"><div class="ce"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- System -->
+<div id="panel-system" class="panel">
+  <div class="g4" style="margin-bottom:14px">
+    <div class="tile"><div class="tl">Version</div><div class="tv mono sm" id="sys-v">—</div><div class="ts">Dobby AI</div></div>
+    <div class="tile"><div class="tl">Inbound Queue</div><div class="tv" id="sys-ib">0</div><div class="ts">messages pending</div></div>
+    <div class="tile"><div class="tl">Outbound Queue</div><div class="tv" id="sys-ob">0</div><div class="ts">messages pending</div></div>
+    <div class="tile"><div class="tl">Debug Mode</div><div class="tv" id="sys-db">—</div><div class="ts">gateway logging</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="ct">Bus Queues</span></div>
+      <div class="cb">
+        <div class="mbar"><div class="mbl"><span>Inbound</span><span id="s-ibv">0</span></div><div class="mbt"><div class="mbf" id="s-ibbar" style="width:0%"></div></div></div>
+        <div class="mbar" style="margin-top:12px"><div class="mbl"><span>Outbound</span><span id="s-obv">0</span></div><div class="mbt"><div class="mbf" id="s-obbar" style="width:0%"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">Agent Info</span></div>
+      <div class="cb">
+        <div class="ri"><div class="rin"><div class="rn">Status</div></div><span class="bx" id="sys-st">—</span></div>
+        <div class="ri"><div class="rin"><div class="rn">Version</div></div><span class="vchip" id="sys-v2">—</span></div>
+        <div class="ri"><div class="rin"><div class="rn">Bus ready</div></div><span class="bx" id="sys-bus">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /body -->
+</div><!-- /app -->
+<script>
+'use strict';
+
+/* ── State ──────────────────────────────────────── */
+const S = { status:null, tasks:[], tmux:[], email:null };
+const emailLog = { inbox:[], sent:[] };
+
+/* ── Nav ────────────────────────────────────────── */
+function go(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  const p=document.getElementById('panel-'+name);
+  const t=document.querySelector(`.tab[data-p="${name}"]`);
+  if(p) p.classList.add('on');
+  if(t) t.classList.add('on');
+  if(name==='email')  drawEmail();
+  if(name==='tools')  drawTools();
+  if(name==='tasks')  drawTasksFull();
+  if(name==='system') drawSystem();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>go(b.dataset.p)));
+
+/* ── Fetch ──────────────────────────────────────── */
+async function api(path) {
+  try { const r=await fetch(path,{signal:AbortSignal.timeout(5000)}); return r.ok?r.json():null; }
+  catch{return null;}
+}
+
+/* ── Util ───────────────────────────────────────── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function ago(d){if(!d)return'';const s=(Date.now()-new Date(d))/1000;if(s<60)return'just now';if(s<3600)return Math.round(s/60)+'m ago';return Math.round(s/3600)+'h ago';}
+function now(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+function badge(cls,txt){return`<span class="bx ${cls}">${esc(txt)}</span>`}
+
+/* ── Status ─────────────────────────────────────── */
+async function pollStatus() {
+  const d=await api('/api/status');
+  const pill=document.getElementById('agent-pill');
+  const ptxt=document.getElementById('pill-txt');
+  pill.className=d?'':'off';
+  ptxt.textContent=d?'online':'offline';
+  S.status=d;
+  if(d){
+    set('tv',d.version||'—'); set('tm',d.model||'—');
+    set('sys-v',d.version||'—'); set('sys-v2',d.version||'—');
+    set('sys-ib',d.inbound_queue??0); set('sys-ob',d.outbound_queue??0);
+    set('sys-db',d.debug?'on':'off');
+    set('ov-bq',d.inbound_queue??0);
+    // status badges
+    document.getElementById('sys-st').innerHTML=badge('bg','online');
+    document.getElementById('sys-bus').innerHTML=badge(d.bus_ready?'bg':'br',d.bus_ready?'ready':'error');
+    // bars
+    bar('s-ibbar','s-ibv',d.inbound_queue??0);
+    bar('s-obbar','s-obv',d.outbound_queue??0);
+  } else {
+    document.getElementById('sys-st').innerHTML=badge('br','offline');
+  }
+  set('ov-st',d?'online':'offline');
+  set('ov-sv',d?'v'+(d.version||''):'unreachable');
+}
+
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+function bar(bid,vid,v){
+  const bf=document.getElementById(bid); const bv=document.getElementById(vid);
+  if(bv)bv.textContent=v;
+  if(!bf)return;
+  const pct=Math.min((v/20)*100,100);
+  bf.style.width=pct+'%';
+  bf.className='mbf'+(v>15?' crit':v>8?' warn':'');
+}
+
+/* ── Tasks ──────────────────────────────────────── */
+async function pollTasks() {
+  const d=await api('/api/tasks');
+  S.tasks=Array.isArray(d)?d:[];
+  set('ov-tk',S.tasks.length);
+  drawTasksOv();
+  drawTasksFull();
+}
+
+function trow(t,badgeCls){
+  return`<div class="ri">
+    <div class="rin"><div class="rn">${esc(t.name||t.id||'task')}</div><div class="rm mono sm">${esc(t.interval||t.next_run||'')}</div></div>
+    ${badge(badgeCls||'bac',t.status||'running')}
+  </div>`;
+}
+
+function drawTasksOv(){
+  const el=document.getElementById('ov-tlist');
+  if(!S.tasks.length){el.innerHTML='<div class="ce"><div class="ic">📋</div>No active tasks</div>';return;}
+  el.innerHTML=S.tasks.slice(0,4).map(t=>trow(t,'bac')).join('');
+}
+
+function drawTasksFull(){
+  const cur=S.tasks.filter(t=>!t.status||t.status==='running');
+  const bkl=S.tasks.filter(t=>t.status==='pending');
+  const don=S.tasks.filter(t=>t.status==='done'||t.status==='completed');
+  fillGroup('tk-cur',cur,'⚡','Nothing running');
+  fillGroup('tk-bkl',bkl,'📬','Queue empty');
+  fillGroup('tk-don',don,'✅','No completed tasks',true);
+  // tmux
+  const te=document.getElementById('tk-tmux');
+  if(!te)return;
+  if(!S.tmux.length){te.innerHTML='<div class="ce"><div class="ic">🖥</div>No tmux sessions</div>';return;}
+  te.innerHTML=S.tmux.map(s=>`<div class="ri"><div class="ric b">🖥</div><div class="rin"><div class="rn mono">${esc(s.name)}</div><div class="rm">${esc(s.windows)} window(s)</div></div>${badge('bb','active')}</div>`).join('');
+}
+
+function fillGroup(id,tasks,ic,msg,done=false){
+  const el=document.getElementById(id);if(!el)return;
+  if(!tasks.length){el.innerHTML=`<div class="ce"><div class="ic">${ic}</div>${msg}</div>`;return;}
+  el.innerHTML=tasks.map(t=>trow(t,done?'bz':'bac')).join('');
+}
+
+/* ── tmux ───────────────────────────────────────── */
+async function pollTmux() {
+  const d=await api('/api/tmux');
+  S.tmux=Array.isArray(d)?d:[];
+  set('ov-tx',S.tmux.length);
+  const el=document.getElementById('ov-tmlist');
+  if(!S.tmux.length){el.innerHTML='<div class="ce"><div class="ic">🖥</div>No sessions</div>';return;}
+  el.innerHTML=S.tmux.map(s=>`<div class="ri"><div class="ric b">🖥</div><div class="rin"><div class="rn mono">${esc(s.name)}</div><div class="rm">${esc(s.windows)} window(s)</div></div>${badge('bb','active')}</div>`).join('');
+}
+
+/* ── Email ──────────────────────────────────────── */
+async function pollEmail() {
+  const d=await api('/api/email');
+  S.email=d;
+  const bx=document.getElementById('ov-eml-bx');
+  const ok=d&&d.configured;
+  if(bx){bx.className='bx '+(ok?'bg':'bz');bx.textContent=ok?'active':'not configured';}
+  if(ok&&d.last_from&&!emailLog.inbox.find(e=>e.from===d.last_from&&e.subject===d.last_subject)){
+    emailLog.inbox.unshift({from:d.last_from,subject:d.last_subject||'(no subject)',time:new Date().toISOString()});
+    if(emailLog.inbox.length>5)emailLog.inbox.pop();
+  }
+  drawEmailOv();
+}
+
+function drawEmailOv(){
+  const el=document.getElementById('ov-eml');
+  const all=emailLog.inbox.slice(0,3);
+  if(!all.length){el.innerHTML='<div class="ce"><div class="ic">✉️</div>No recent emails</div>';return;}
+  el.innerHTML=all.map(e=>`<div class="ri"><div class="ric b">📥</div><div class="rin"><div class="rn">${esc(e.from)}</div><div class="rm">${esc(e.subject)}</div></div><span class="dim sm">${ago(e.time)}</span></div>`).join('');
+}
+
+function drawEmail(){
+  const d=S.email;
+  // Status
+  const sb=document.getElementById('eml-status');
+  if(!d||!d.configured){
+    sb.innerHTML='<div class="ce"><div class="ic">✉️</div>Not configured.<br><span class="sm">Add [email] to dobby.conf</span></div>';
+  } else {
+    const lines=(d.status_text||'').trim().split('\n').filter(Boolean);
+    sb.innerHTML=lines.map(l=>{const[k,...r]=l.split(':');return`<div class="ri"><div class="rin"><div class="rn">${esc(k.trim())}</div></div><span class="mono sm dim">${esc(r.join(':').trim())}</span></div>`;}).join('');
+  }
+  // Allowlist
+  const ab=document.getElementById('eml-allow');
+  if(!d){ab.innerHTML='<div class="ce"><div class="spin"></div></div>';}
+  else if(!d.allowlist_enabled){ab.innerHTML='<div class="ce"><div class="ic">🔓</div>Disabled — all senders accepted.<br><span class="sm">Add [email] to allowlist.conf to restrict</span></div>';}
+  else{
+    const l=d.allowlist||[];
+    ab.innerHTML=!l.length
+      ?'<div class="ce"><div class="ic">⚠️</div>Allowlist active but empty — all email blocked.</div>'
+      :`<div class="tags">${l.map(a=>`<span class="bx bac mono">${esc(a)}</span>`).join('')}</div>`;
+  }
+  // Inbox
+  const ib=document.getElementById('eml-in');
+  if(!emailLog.inbox.length){ib.innerHTML='<div class="ce"><div class="ic">📥</div>No received emails</div>';}
+  else ib.innerHTML=emailLog.inbox.slice(0,5).map(e=>`<div class="erow"><div class="efrom">📥 ${esc(e.from)}</div><div class="esub">${esc(e.subject)}</div><div class="etime">${ago(e.time)}</div></div>`).join('');
+  // Sent
+  const ot=document.getElementById('eml-out');
+  if(!emailLog.sent.length){ot.innerHTML='<div class="ce"><div class="ic">📤</div>No sent emails</div>';}
+  else ot.innerHTML=emailLog.sent.slice(0,5).map(e=>`<div class="erow"><div class="efrom">📤 To: ${esc(e.to||'')}</div><div class="esub">${esc(e.subject)}</div><div class="etime">${ago(e.time)}</div></div>`).join('');
+}
+
+/* ── Tools ──────────────────────────────────────── */
+function drawTools(){
+  const el=document.getElementById('tls');
+  const cnt=document.getElementById('tc');
+  const TOOLS=[
+    {ic:'🐚',cls:'g',name:'shell_exec',desc:'Execute shell commands in a managed tmux session',st:'bg'},
+    {ic:'📁',cls:'b',name:'file_read / file_write',desc:'Read and write files within the workspace',st:'bg'},
+    {ic:'✉️',cls:'g',name:'send_email',desc:'Send email via configured SMTP channel',st:S.email?.configured?'bg':'bz'},
+    {ic:'🧠',cls:'a',name:'memory_store / memory_recall',desc:'Persistent markdown memory across sessions',st:'bg'},
+    {ic:'⏰',cls:'b',name:'schedule_add / schedule_control',desc:'Background task scheduling with cron-like intervals',st:'bg'},
+    {ic:'🔌',cls:'x',name:'serial_exec',desc:'Native serial port communication (termios, no deps)',st:'bg'},
+  ];
+  if(cnt)cnt.textContent=TOOLS.length+' registered';
+  el.innerHTML=TOOLS.map(t=>`<div class="ri"><div class="ric ${t.cls}">${t.ic}</div><div class="rin"><div class="rn">${esc(t.name)}</div><div class="rm">${esc(t.desc)}</div></div>${badge(t.st,'active')}</div>`).join('');
+}
+
+function drawSystem(){/* live from polls */}
+
+/* ── Chat ───────────────────────────────────────── */
+const msgs=document.getElementById('msgs');
+const cinp=document.getElementById('cinp');
+const csend=document.getElementById('csend');
+
+function addMsg(role,text){
+  const u=role==='user';
+  const d=document.createElement('div');
+  d.className='msg '+(u?'u':'a');
+  d.innerHTML=`<div class="mav">${u?'U':'⚡'}</div><div><div class="mb">${esc(text).replace(/\n/g,'<br>')}</div><div class="mt">${now()}</div></div>`;
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+}
+function showTyping(){
+  const d=document.createElement('div');d.className='msg a';d.id='typing';
+  d.innerHTML='<div class="mav">⚡</div><div><div class="mb"><div class="tdots"><div class="td"></div><div class="td"></div><div class="td"></div></div></div></div>';
+  msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+}
+function rmTyping(){const e=document.getElementById('typing');if(e)e.remove();}
+
+async function send(){
+  const txt=cinp.value.trim();if(!txt)return;
+  cinp.value='';cinp.style.height='auto';csend.disabled=true;
+  addMsg('user',txt);showTyping();
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:txt}),signal:AbortSignal.timeout(120000)});
+    rmTyping();
+    const d=r.ok?await r.json():null;
+    const rep=d?.response||d?.error||'No response.';
+    addMsg('agent',rep);
+    // Track outbound emails from chat
+    const m=rep.match(/(?:sent|email sent)\s+to\s+([^\s,]+@[^\s,]+\.[^\s,]+)/i);
+    if(m){emailLog.sent.unshift({to:m[1],subject:'(via chat)',time:new Date().toISOString()});if(emailLog.sent.length>5)emailLog.sent.pop();}
+  } catch{rmTyping();addMsg('agent','Connection error — is Dobby running?');}
+  csend.disabled=false;cinp.focus();
+}
+csend.addEventListener('click',send);
+cinp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+cinp.addEventListener('input',()=>{cinp.style.height='auto';cinp.style.height=Math.min(cinp.scrollHeight,140)+'px';});
+
+/* ── Boot ───────────────────────────────────────── */
+async function boot(){
+  await Promise.all([pollStatus(),pollTasks(),pollTmux(),pollEmail()]);
+  addMsg('agent','Hi! I\'m Dobby. How can I help?');
+}
+boot();
+setInterval(pollStatus,5000);
+setInterval(pollTasks,8000);
+setInterval(pollTmux,10000);
+setInterval(pollEmail,15000);
+</script>
+</body>
+</html>

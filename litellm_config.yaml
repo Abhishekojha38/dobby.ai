@@ -1,0 +1,80 @@
+# LiteLLM Proxy Configuration for Dobby
+# Docs: https://docs.litellm.ai/docs/proxy/configs
+#
+# This proxy sits between Dobby and any LLM provider.
+# Dobby talks to it as a plain openai-compatible endpoint.
+# The proxy handles: auth, retries, fallbacks, rate limits, cost tracking.
+#
+# Usage:
+#   docker compose --profile litellm up
+#
+# Then in dobby.conf (or via env var MODEL):
+#   [provider]
+#   type    = openai
+#   model   = <model_name from this file>
+#   url     = http://litellm:4000
+#   api_key = dobby-proxy
+#
+# Adding a model: add an entry under model_list, no Dobby changes needed.
+
+model_list:
+
+  # OpenRouter (routes to many providers)
+  - model_name: openrouter-llama            # paid, no rate limits
+    litellm_params:
+      model: openrouter/meta-llama/llama-3.3-70b-instruct
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  - model_name: openrouter-llama-free       # free tier, rate limited
+    litellm_params:
+      model: openrouter/meta-llama/llama-3.3-70b-instruct:free
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # Groq (fast inference)
+  - model_name: groq-llama
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+
+  - model_name: groq-llama-fast
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+
+  # Anthropic / Claude
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-20250514
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-haiku                # cheaper / faster
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # OpenAI
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # Ollama (local)
+  - model_name: ollama-local
+    litellm_params:
+      model: ollama/mistral-nemo:12b
+      api_base: http://host.docker.internal:11434
+
+litellm_settings:
+  drop_params: true          # silently ignore unsupported params per provider
+  request_timeout: 120
+  num_retries: 2
+  fallbacks:
+    - openrouter-llama-free: [openrouter-llama]   # escalate to paid on rate limit
+
+general_settings:
+  master_key: "dobby-proxy"  # Dobby sends this as its API key to the proxy

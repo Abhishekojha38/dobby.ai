@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dobby — Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#f6f6f5;--surface:#ffffff;--border:#e8e8e5;--text:#1c1c1a;--muted:#888884;--accent:#4e7a68;--a-l:#edf2f0;--a-m:#c3d8d2;--blue:#2b5f8c;--b-l:#edf4fb;--green:#2d7a4e;--g-l:#edf6f2;--purple:#6b4fa0;--p-l:#f2eefb;--amber:#ad7f18;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px;padding:32px;min-width:1100px}
+h1{font-size:20px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:32px}
+h2{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:14px}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.box.blue{border-color:#b8d3ee;background:var(--b-l)}.box.green{border-color:#aad5be;background:var(--g-l)}.box.accent{border-color:var(--a-m);background:var(--a-l)}.box.amber{border-color:#e5d097;background:#fdf8ec}.box.purple{border-color:#c9bbea;background:var(--p-l)}
+.bt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px}
+.fc{display:inline-flex;padding:3px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);white-space:nowrap;margin:2px}
+.fc.b{background:var(--blue);color:#fff;border-color:var(--blue)}.fc.g{background:var(--green);color:#fff;border-color:var(--green)}.fc.hi{background:var(--accent);color:#fff;border-color:var(--accent)}.fc.p{background:var(--purple);color:#fff;border-color:var(--purple)}.fc.a{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px;overflow-x:auto}
+.dr{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.dr:last-child{border-bottom:none}
+.dl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);min-width:160px;flex-shrink:0;padding-top:1px}
+.dv{font-size:13px;color:var(--text);line-height:1.5}
+.dv code{font-family:'DM Mono',monospace;font-size:11px;background:var(--bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+.c2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.c3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.mn{font-size:12px;color:var(--muted);margin:5px 0 8px}
+</style>
+</head>
+<body>
+<h1>⚡ Dobby — Architecture</h1>
+<p class="sub">End-to-end flow · File structure · Channel management · v1.0.0</p>
+
+<h2>End-to-End Message Flow</h2>
+<div class="flow">
+<svg viewBox="0 0 1060 290" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:900px;height:auto;font-family:'DM Sans',sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#888884"/></marker>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4e7a68"/></marker>
+  </defs>
+  <!-- Channels -->
+  <rect x="10" y="18" width="132" height="56" rx="8" fill="#edf4fb" stroke="#b8d3ee"/>
+  <text x="76" y="42" text-anchor="middle" font-size="12" font-weight="600" fill="#2b5f8c">CLI REPL</text>
+  <text x="76" y="58" text-anchor="middle" font-size="10" fill="#888884">src/cli/main.c</text>
+  <rect x="10" y="96" width="132" height="56" rx="8" fill="#edf4fb" stroke="#b8d3ee"/>
+  <text x="76" y="120" text-anchor="middle" font-size="12" font-weight="600" fill="#2b5f8c">HTTP Gateway</text>
+  <text x="76" y="137" text-anchor="middle" font-size="10" fill="#888884">gateway/gateway.c</text>
+  <rect x="10" y="174" width="132" height="56" rx="8" fill="#edf6f2" stroke="#aad5be"/>
+  <text x="76" y="198" text-anchor="middle" font-size="12" font-weight="600" fill="#2d7a4e">Email Channel</text>
+  <text x="76" y="215" text-anchor="middle" font-size="10" fill="#888884">channels/email/</text>
+  <!-- Arrows channels → bus -->
+  <line x1="142" y1="46" x2="212" y2="46" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="142" y1="124" x2="212" y2="124" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="142" y1="202" x2="212" y2="202" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="174" y="41" text-anchor="middle" font-size="9" fill="#888884">inbound_msg</text>
+  <text x="174" y="119" text-anchor="middle" font-size="9" fill="#888884">inbound_msg</text>
+  <text x="174" y="197" text-anchor="middle" font-size="9" fill="#888884">inbound_msg</text>
+  <!-- Bus -->
+  <rect x="212" y="78" width="140" height="96" rx="8" fill="#fdf8ec" stroke="#e5d097"/>
+  <text x="282" y="106" text-anchor="middle" font-size="12" font-weight="600" fill="#ad7f18">Message Bus</text>
+  <text x="282" y="123" text-anchor="middle" font-size="10" fill="#888884">bus/bus.c</text>
+  <text x="282" y="141" text-anchor="middle" font-size="9" fill="#ad7f18">inbound queue →</text>
+  <text x="282" y="156" text-anchor="middle" font-size="9" fill="#ad7f18">← outbound queue</text>
+  <!-- Bus → worker -->
+  <line x1="352" y1="126" x2="422" y2="126" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="384" y="120" text-anchor="middle" font-size="9" fill="#888884">dequeue</text>
+  <!-- Worker -->
+  <rect x="422" y="88" width="140" height="76" rx="8" fill="#f2eefb" stroke="#c9bbea"/>
+  <text x="492" y="120" text-anchor="middle" font-size="12" font-weight="600" fill="#6b4fa0">Agent Worker</text>
+  <text x="492" y="137" text-anchor="middle" font-size="10" fill="#888884">bus/agent_worker.c</text>
+  <text x="492" y="154" text-anchor="middle" font-size="9" fill="#888884">session lookup</text>
+  <!-- Worker → Agent -->
+  <line x1="562" y1="126" x2="632" y2="126" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="595" y="120" text-anchor="middle" font-size="9" fill="#888884">agent_chat()</text>
+  <!-- Agent -->
+  <rect x="632" y="58" width="140" height="138" rx="8" fill="#edf2f0" stroke="#c3d8d2"/>
+  <text x="702" y="86" text-anchor="middle" font-size="12" font-weight="600" fill="#4e7a68">Agent</text>
+  <text x="702" y="103" text-anchor="middle" font-size="10" fill="#888884">agent/agent.c</text>
+  <text x="702" y="122" text-anchor="middle" font-size="9" fill="#4e7a68">agentic loop</text>
+  <text x="702" y="138" text-anchor="middle" font-size="9" fill="#888884">→ tool calls</text>
+  <text x="702" y="153" text-anchor="middle" font-size="9" fill="#888884">→ LLM calls</text>
+  <text x="702" y="168" text-anchor="middle" font-size="9" fill="#888884">→ reply</text>
+  <text x="702" y="184" text-anchor="middle" font-size="9" fill="#888884">tools/ + providers/</text>
+  <!-- Agent → LLM -->
+  <line x1="772" y1="96" x2="852" y2="96" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="852" y1="112" x2="772" y2="128" stroke="#888884" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="812" y="90" text-anchor="middle" font-size="9" fill="#888884">HTTP POST</text>
+  <text x="812" y="127" text-anchor="middle" font-size="9" fill="#888884">JSON response</text>
+  <!-- LLM -->
+  <rect x="852" y="68" width="110" height="68" rx="8" fill="#edf4fb" stroke="#b8d3ee"/>
+  <text x="907" y="95" text-anchor="middle" font-size="11" font-weight="600" fill="#2b5f8c">LLM Provider</text>
+  <text x="907" y="111" text-anchor="middle" font-size="9" fill="#888884">Ollama / OpenAI</text>
+  <text x="907" y="126" text-anchor="middle" font-size="9" fill="#888884">providers/</text>
+  <!-- Reply path dashed -->
+  <path d="M 702 196 C 702 256 290 256 282 174" stroke="#4e7a68" stroke-width="1.5" fill="none" marker-end="url(#ar2)" stroke-dasharray="5,3"/>
+  <text x="490" y="272" text-anchor="middle" font-size="9" fill="#4e7a68">outbound_msg → bus → dispatcher → channel.send()</text>
+  <!-- Session mgr note -->
+  <rect x="418" y="14" width="156" height="32" rx="6" fill="#fff" stroke="#e8e8e5"/>
+  <text x="496" y="28" text-anchor="middle" font-size="10" fill="#888884">Session Manager</text>
+  <text x="496" y="41" text-anchor="middle" font-size="9" fill="#888884">session/session.c — one agent_t per channel:user</text>
+  <line x1="496" y1="46" x2="496" y2="88" stroke="#888884" stroke-width="1" stroke-dasharray="3,2"/>
+</svg>
+</div>
+
+<h2>File Structure</h2>
+<div class="c3">
+  <div class="box blue">
+    <div class="bt">📡 Channels</div>
+    <div><span class="fc b">src/cli/main.c</span></div>
+    <p class="mn">CLI REPL: readline, slash commands, response display. Boots all subsystems.</p>
+    <div><span class="fc b">src/gateway/gateway.c</span></div>
+    <div><span class="fc">src/gateway/gateway.h</span></div>
+    <p class="mn">HTTP server. Endpoints: /, /api/chat, /api/status, /api/tasks, /api/tmux, /api/email</p>
+    <div><span class="fc g">src/channels/email/email_channel.c</span></div>
+    <div><span class="fc">src/channels/email/email_channel.h</span></div>
+    <p class="mn">IMAP poll + SMTP reply via libcurl. ;UID=N URL fetch delivers body directly. Allowlist enforced on inbound and outbound.</p>
+  </div>
+  <div class="box amber">
+    <div class="bt">🚌 Bus &amp; Sessions</div>
+    <div><span class="fc a">src/bus/bus.c / bus.h</span></div>
+    <p class="mn">Thread-safe inbound + outbound queues. Channels post inbound_msg_t; worker dequeues; dispatcher routes outbound.</p>
+    <div><span class="fc a">src/bus/agent_worker.c</span></div>
+    <p class="mn">Single worker thread. Dequeues messages, looks up session, calls agent_chat(), posts reply to outbound queue.</p>
+    <div><span class="fc a">src/session/session.c / session.h</span></div>
+    <p class="mn">Hash table: (channel:user) → agent_t. Factory-cloned from template. TTL expiry. Pre-creates cli:local at boot.</p>
+  </div>
+  <div class="box accent">
+    <div class="bt">🧠 Agent</div>
+    <div><span class="fc hi">src/agent/agent.c / agent.h</span></div>
+    <p class="mn">Agentic loop: build messages → LLM → parse tool calls → execute → iterate. max_iterations + max_messages.</p>
+    <div><span class="fc hi">src/agent/tool_registry.c</span></div>
+    <p class="mn">Global tool table. Provides JSON schema to providers. Dispatches tool calls by name string.</p>
+  </div>
+</div>
+
+<div class="c3">
+  <div class="box green">
+    <div class="bt">🛠 Tools</div>
+    <div><span class="fc g">src/tools/shell/shell_tool.c</span></div>
+    <p class="mn">shell_exec via tmux. Command allowlist. Output capture with timeout.</p>
+    <div><span class="fc g">src/tools/file_ops/file_tool.c</span></div>
+    <p class="mn">file_read / file_write. Path allowlist enforcement.</p>
+    <div><span class="fc g">src/tools/email/email_tool.c</span></div>
+    <p class="mn">send_email. Calls email_channel_is_allowed() before smtp_send(). Clear error if blocked.</p>
+    <div><span class="fc g">src/tools/scheduler/scheduler.c</span></div>
+    <p class="mn">schedule_add / schedule_control. Background tasks with intervals.</p>
+    <div><span class="fc g">src/tools/serial/serial_tool.c</span></div>
+    <p class="mn">serial_exec. Native termios, device.conf registry, ANSI stripping.</p>
+    <div><span class="fc g">src/tools/skills/skills.c</span></div>
+    <p class="mn">Scans workspace/skills/*/SKILL.md into system prompt.</p>
+  </div>
+  <div class="box purple">
+    <div class="bt">🏗 Core &amp; Providers</div>
+    <div><span class="fc p">src/core/dobby.h</span></div>
+    <p class="mn">Master header. Types, log, config. VERSION_STRING = 1.0.0.</p>
+    <div><span class="fc p">src/core/types.c/h</span></div>
+    <p class="mn">result_t, inbound_msg_t, outbound_msg_t, response_pair_t. String utils (str_trim, str_starts_with).</p>
+    <div><span class="fc p">src/core/config.c/h</span></div>
+    <p class="mn">INI parser. config_get / config_get_int. Reads dobby.conf.</p>
+    <div><span class="fc p">src/providers/ollama/ &amp; openai/</span></div>
+    <p class="mn">LLM adapters. Common provider_t interface. OpenAI-compatible for Groq, Anthropic, etc.</p>
+    <div><span class="fc p">src/providers/registry.c</span></div>
+    <p class="mn">Auto-detect provider from API key / URL patterns.</p>
+  </div>
+  <div class="box">
+    <div class="bt">🔒 Security, Memory &amp; UX</div>
+    <div><span class="fc">src/security/allowlist.c/h</span></div>
+    <p class="mn">4 ACL types: COMMAND, PATH, ENDPOINT, EMAIL. Glob matching. Runtime add/remove with persistence to allowlist.conf.</p>
+    <div><span class="fc">src/memory/md_memory.c/h</span></div>
+    <p class="mn">Markdown memory in workspace/memory/. Persists across sessions.</p>
+    <div><span class="fc">src/history/history.c/h</span></div>
+    <p class="mn">Append-only HISTORY.md. Date-grouped. Never injected into LLM.</p>
+    <div><span class="fc">src/ux/slash_commands.c/h</span></div>
+    <p class="mn">CLI slash commands. Includes full /email suite.</p>
+    <div><span class="fc">src/ux/typing.c/h</span></div>
+    <p class="mn">Spinner. No background thread — advances on on_thinking() callback only.</p>
+  </div>
+</div>
+
+<h2>Session Isolation</h2>
+<div class="box" style="margin-bottom:16px">
+  <div class="dr"><div class="dl">Session key</div><div class="dv"><code>channel:user_id</code> e.g. <code>cli:local</code>, <code>http:192.168.1.10</code>, <code>email:user@gmail.com</code></div></div>
+  <div class="dr"><div class="dl">Isolation</div><div class="dv">Each key gets its own <code>agent_t</code> cloned from template. Conversation history fully isolated.</div></div>
+  <div class="dr"><div class="dl">Factory</div><div class="dv"><code>agent_factory()</code> in <code>main.c</code> clones provider, system prompt, settings. Passed to <code>session_manager_create()</code>.</div></div>
+  <div class="dr"><div class="dl">TTL expiry</div><div class="dv">Sessions expire after <code>session_ttl</code> seconds idle (default 3600). <code>dobby.conf [agent] session_ttl</code>.</div></div>
+</div>
+
+<h2>Email Channel — Receive + Send</h2>
+<div class="box" style="margin-bottom:16px">
+  <div class="dr"><div class="dl">Inbound IMAP</div><div class="dv">Poll thread wakes every <code>poll_interval</code>s. <code>UID SEARCH UNSEEN</code> via CUSTOMREQUEST. Fetches <code>imaps://host/INBOX/;UID=N</code> (native URL — body to write callback directly). RFC 2822 parse → allowlist check → bus post with key <code>email:&lt;from&gt;</code>.</div></div>
+  <div class="dr"><div class="dl">Outbound SMTP</div><div class="dv">Reply triggers <code>email_send()</code>. Allowlist checked. <code>In-Reply-To</code> / <code>References</code> threading headers. libcurl SMTP with TLS.</div></div>
+  <div class="dr"><div class="dl">3 enforcement points</div><div class="dv">(1) <code>process_uid()</code> drops unknown senders. (2) <code>email_send()</code> blocks non-listed reply targets. (3) <code>email_channel_send_direct()</code> + tool pre-check gives clear error to agent.</div></div>
+</div>
+
+<h2>CLI Email Commands</h2>
+<div class="box">
+  <div class="dr"><div class="dl"><code>/email status</code></div><div class="dv">IMAP URL, SMTP, address, poll interval, last UID, last sender, running state</div></div>
+  <div class="dr"><div class="dl"><code>/email allowlist</code></div><div class="dv">Show all ACL patterns. States whether enforcement is active.</div></div>
+  <div class="dr"><div class="dl"><code>/email allow &lt;addr&gt;</code></div><div class="dv">Add pattern at runtime. Persists to <code>allowlist.conf [email]</code>. Supports globs: <code>*@company.com</code></div></div>
+  <div class="dr"><div class="dl"><code>/email deny &lt;addr&gt;</code></div><div class="dv">Remove pattern at runtime. Persists to file.</div></div>
+  <div class="dr"><div class="dl"><code>/email send &lt;addr&gt;</code></div><div class="dv">Quick test email. Checks allowlist first — blocks with error if not listed.</div></div>
+</div>
+
+</body>
+</html>

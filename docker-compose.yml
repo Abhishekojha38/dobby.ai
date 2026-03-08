@@ -1,0 +1,83 @@
+# Dobby AI Agent — Docker Compose
+#
+# Profiles:
+#   default       — Dobby only (bring your own LLM endpoint)
+#   litellm       — Dobby + LiteLLM proxy (multi-provider routing)
+#
+# Usage:
+#   # Dobby only (Groq):
+#   API_KEY=gsk_... MODEL=llama-3.3-70b-versatile docker compose up
+#
+#   # Dobby + LiteLLM proxy:
+#   GROQ_API_KEY=gsk_... docker compose --profile litellm up
+#
+# Volumes:
+#   dobby-workspace — persists memory/history across restarts
+
+services:
+  dobby:
+    build: .
+    image: dobby:latest
+    container_name: dobby
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - dobby-workspace:/app/workspace
+    environment:
+      # ── Provider ────────────────────────────────────────────────────────
+      # Ollama (local, host network):
+      #   PROVIDER=ollama  MODEL=mistral-nemo:12b
+      #   OLLAMA_URL=http://host.docker.internal:11434
+      #
+      # Groq:
+      #   PROVIDER=groq  MODEL=llama-3.3-70b-versatile  API_KEY=gsk_...
+      #
+      # LiteLLM proxy (use with --profile litellm):
+      #   PROVIDER=openai  MODEL=groq-llama
+      #   API_URL=http://litellm:4000  API_KEY=dobby-proxy
+      PROVIDER:    ${PROVIDER:-ollama}
+      MODEL:       ${MODEL:-mistral-nemo:12b}
+      OLLAMA_URL:  ${OLLAMA_URL:-http://host.docker.internal:11434}
+      API_URL:     ${API_URL:-}
+      API_KEY:     ${API_KEY:-}
+      # ── Email ────────────────────────────────────────────────────────────
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      # ── Paths ────────────────────────────────────────────────────────────
+      WORKSPACE:    /app/workspace
+      TEMPLATE_DIR: /app/templates
+      SKILLS_SRC:   /app/skills
+      # ── Logging ──────────────────────────────────────────────────────────
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+    extra_hosts:
+      # Allows container to reach Ollama running on the Docker host
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  # ── Optional: LiteLLM proxy ───────────────────────────────────────────────
+  # Provides multi-provider routing, fallbacks, rate limiting, and cost tracking.
+  # Enable with: docker compose --profile litellm up
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    profiles: [litellm]
+    container_name: dobby-litellm
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml:ro
+    environment:
+      GROQ_API_KEY:       ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+
+volumes:
+  dobby-workspace:
+    driver: local
