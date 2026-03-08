@@ -1,4 +1,8 @@
-# Dobby — Persistent AI Agent
+<p align="center">
+  <img src="assets/Dobby.png" alt="Dobby Logo" width="200" />
+</p>
+
+# Dobby — Personal AI Assistant
 
 Dobby is a self-hosted AI agent daemon written in C. It runs continuously in the background, accepts messages over CLI, HTTP, and Email, and uses any OpenAI-compatible LLM to complete tasks using its built-in tools.
 
@@ -17,6 +21,16 @@ Dobby is a self-hosted AI agent daemon written in C. It runs continuously in the
 | **Security** | Allowlist for commands, paths, endpoints, and email senders |
 | **Web dashboard** | Real-time UI: Overview, Chat, Tasks, Email, Tools, System |
 | **Headless** | Runs without a TTY — suitable for servers and containers |
+
+---
+
+## Working Use Cases
+
+### CLI Interface
+![Dobby CLI](assets/Dobby-Cli.png)
+
+### Email Interface
+![Dobby Email](assets/Email.png)
 
 ---
 
