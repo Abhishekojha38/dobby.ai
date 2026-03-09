@@ -1,38 +1,51 @@
 # Tool Notes
 
-Tool signatures are provided automatically. This covers non-obvious constraints only.
+Tool signatures are auto-provided. Only non-obvious constraints are listed.
 
 ## file_read / file_write
-Relative paths resolve from workspace root. Binary files: use `shell_exec` with `xxd`.
-Always `file_read` before `file_write` on existing files. 10MB size limit.
+- Paths are relative to workspace root.
+- Read files before modifying them.
+- Binary files: use `shell_exec` + `xxd`.
+- Max size: 10MB.
 
 ## memory_store / memory_search
-`memory_store(section, key, value)` — upserts into MEMORY.md.
-`memory_search(query)` — full-text search. Never write MEMORY.md directly.
-Sections: User Information, Preferences, Project Context, Important Notes.
+- `memory_store(section,key,value)` → upsert into `MEMORY.md`.
+- `memory_search(query)` → full-text search.
+- Never edit `MEMORY.md` directly.
+- Sections: User Information, Preferences, Project Context, Important Notes.
 
 ## send_email
-`send_email` is a Dobby tool — NOT a shell command or binary.
-Only call it via the function-calling mechanism. Never use it in shell_exec or shell scripts.
+- Dobby tool only.
+- Call via tool interface.
+- Never use in `shell_exec` or scripts.
 
 ## schedule_add
-Two task types:
-- `agent_turn` (default) — `task` is a natural language instruction. Dobby runs a full agent
-  turn with access to all tools. Use this for anything involving send_email, file ops, memory, etc.
-- `shell` — `task` is a raw shell command. Use only for system tasks needing no Dobby tools.
+Task types:
+- **agent_turn** (default): natural language task with full tool access.
+- **shell**: raw shell command only.
 
-Never write a shell script to work around tool access — just use type="agent_turn".
+Use `agent_turn` when tools are required.  
+Never bypass tools with shell scripts.
 
 ## serial_execute
-Config at `<workspace>/platform_config/device.conf`. Use named device: `{"device":"m1700_0","commands":["uname -a"]}`.
-If device missing from config, create it with default values first.
+Config: `<workspace>/platform_config/device.conf`
 
-## tmux scripts (in ./skills/tmux/scripts/)
-`tmux-session.sh <n> [cmd]` — only way to create sessions (enforces detached + private socket).
-`wait-for-text.sh` — wait for pattern in pane. `find-sessions.sh` — list sessions.
-Never run bare `tmux new-session`.
+Example:
+`{"device":"m1700_0","commands":["uname -a"]}`
 
-## HISTORY.md — do not touch
-`HISTORY.md` is written automatically by the daemon as an internal audit log.
-Never read it, write it, or treat it as a prerequisite for any operation.
-If you need to recall past events, use `memory_search` — that queries MEMORY.md.
+If device missing, create it with default config first.
+
+## tmux scripts
+Location: `./skills/tmux/scripts/`
+
+- `tmux-session.sh <n> [cmd]` — create sessions only (detached + private socket)
+- `wait-for-text.sh` — wait for pane output pattern
+- `find-sessions.sh` — list sessions
+
+Never run `tmux new-session` directly.
+
+## HISTORY.md
+Auto-written daemon audit log.
+
+Do **not** read, write, or depend on it.  
+Use `memory_search` to recall past events.

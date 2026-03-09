@@ -1,52 +1,47 @@
 # Agent Instructions
 
-
 ## Workspace
+Workspace root is the configured directory.
 
-Your workspace is at the configured workspace directory.
-- Long-term memory: `{workspace}/memory/MEMORY.md` — use `memory_store` / `memory_search` tools, never write directly
+- Memory: `{workspace}/memory/MEMORY.md`  
+  Use `memory_store` / `memory_search` only. Never edit directly.
 - Skills: `{workspace}/skills/<n>/SKILL.md`
+- Heartbeat: `{workspace}/HEARTBEAT.md` — check periodically and process active tasks.
 
-> Note: `HISTORY.md` is an internal system audit log written automatically by the daemon. Do not read or write it. It is not your memory — `MEMORY.md` is.
+## Tool Guidelines
+- State intent briefly before tool use.
+- Do not predict results before receiving them.
+- If a tool fails, read the error before retrying.
+- Re-read files after writing when accuracy matters.
+- Execute tools immediately — no narration or confirmation.
 
-## Tool call guidelines
-
-- State your intent briefly before calling tools (e.g. "Let me check that").
-- Never predict or describe the expected result before receiving it.
-- If a tool call fails, read the error carefully before retrying.
-- After writing a file, re-read it if accuracy matters.
-- Invoke tools immediately. Do not narrate, or ask for confirmation first.
-- Never write tool calls as JSON code blocks — always use the function-calling mechanism.
-
-**Use the function-calling mechanism. Never write tool calls as text.**
-
-Writing `read_file("path")` or ```tool_name(args)``` in your response text does nothing — the tool is never executed and the user sees garbage. If you need to call a tool, call it. Do not describe calling it.
-
-## Tools available
-
-Shell commands, file read/write/list/search/delete, scheduler, serial devices, memory, skills.
+## Tools
+Shell, file ops, scheduler, serial devices, memory, skills.
 
 ## shell_exec
-
-Use `shell_exec` for one-shot stateless commands (ls, cat, grep, df, ps, curl).
+Use for short stateless commands (e.g. `ls`, `cat`, `grep`, `df`, `ps`, `curl`).
 
 ## tmux
+Use when:
+- state must persist (`cd`, `export`, `source`)
+- command is interactive (`ssh`, `docker -it`, `gdb`, `python`)
+- runtime >30s (builds, `make`)
 
-Use tmux (read `skills/tmux/SKILL.md` first) when: state must persist (cd, export, source),
-command is interactive (ssh, docker -it, gdb, python REPL), or runtime >30s (make, builds).
+Read `skills/tmux/SKILL.md` first.
 
-## Skills — read before acting
+## Skills
+Read the relevant skill before use (tmux, serial, ssh, wlan, network, linux).
 
-Read the matching skill file before using: tmux, serial (/dev/tty*), remote (ssh),
-wireless (wlan), network (ping/traceroute), linux (apt/systemctl).
-Example: `file_read("skills/serial/SKILL.md")` before serial work.
-Device config lives in `platform_config/device.conf` — read it to see what boards are registered.
+Example:
+`file_read("skills/serial/SKILL.md")`
+
+Device config: `platform_config/device.conf`.
 
 ## Memory
+Use `memory_store` to save facts.  
+Use `memory_search` before asking the user again.
 
-Use `memory_store` to save important facts. Use `memory_search` before asking user to repeat.
-**Never use `file_read` or `file_write` on MEMORY.md directly — always use the memory tools.**
+Never read/write `MEMORY.md` directly.
 
 ## Style
-
-Concise. When done, say what happened. No bullet-point plans before acting.
+Concise. Act first, explain briefly after. No pre-action plans.
