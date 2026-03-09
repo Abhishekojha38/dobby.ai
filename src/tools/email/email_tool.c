@@ -62,8 +62,9 @@ static char *email_tool_execute(const cJSON *args, void *user_data) {
     if (!email_channel_is_allowed(g_email_ch, to)) {
         char msg[512];
         snprintf(msg, sizeof(msg),
-            "Cannot send email: %s is not in the allowed recipients list. "
-            "Only pre-approved addresses may receive email from Dobby.", to);
+            "BLOCKED by email allowlist: '%s' is not a permitted recipient. "
+            "Fix: add it to allowlist.conf under [email] allow = ..., "
+            "or run: /email allow %s", to, to);
         return json_result(false, msg);
     }
 
@@ -74,7 +75,11 @@ static char *email_tool_execute(const cJSON *args, void *user_data) {
         snprintf(msg, sizeof(msg), "Email sent to %s", to);
         return json_result(true, msg);
     } else {
-        return json_result(false, "SMTP send failed. Check smtp_url and EMAIL_PASSWORD.");
+        return json_result(false,
+            "SMTP send failed. The email was not sent. "
+            "Possible causes: wrong smtp_url, wrong EMAIL_PASSWORD, "
+            "network error, or recipient blocked by allowlist. "
+            "Check [gateway:warn] logs for details.");
     }
 }
 

@@ -64,6 +64,9 @@ static void *dispatcher_fn(void *arg) {
         channel_t *ch = channel_find(msg->channel);
         if (ch && ch->send)
             ch->send(ch, msg);
+        else if (strcmp(msg->channel, "heartbeat") == 0 ||
+                 strcmp(msg->channel, "scheduler") == 0)
+            LOG_DEBUG("Dispatcher: dropping background response (channel '%s')", msg->channel);
         else
             LOG_WARN("Dispatcher: unknown channel '%s'", msg->channel);
         outbound_msg_free(msg);

@@ -99,6 +99,68 @@ static session_manager_t *g_sessions   = NULL;
 static int                g_memory_slot = -1;
 static char               g_workspace[512] = ".";
 
+/* Heartbeat: HEARTBEAT.md check context */
+typedef struct {
+    bus_t *bus;
+    char   path[512];
+} hb_tasks_ctx_t;
+
+static hb_tasks_ctx_t g_hb_tasks_ctx;
+
+/*
+ * heartbeat_check_tasks — reads HEARTBEAT.md and injects it into the
+ * agent bus as an agent_turn on the "heartbeat" channel if the file
+ * contains active tasks (non-empty lines under "## Active Tasks").
+ *
+ * The agent processes it as a normal conversation turn and can use all
+ * tools (send_email, file_write, memory_store, shell_exec, etc.) to
+ * complete the tasks. When done it can update the file itself.
+ */
+static char *heartbeat_check_tasks(void *user_data) {
+    hb_tasks_ctx_t *ctx = (hb_tasks_ctx_t *)user_data;
+    if (!ctx || !ctx->bus) return NULL;
+
+    FILE *f = fopen(ctx->path, "r");
+    if (!f) return NULL;
+
+    /* Quick scan: look for non-empty, non-comment lines under Active Tasks */
+    bool in_active = false;
+    bool has_tasks = false;
+    char line[512];
+    while (fgets(line, sizeof(line), f)) {
+        if (strncmp(line, "## Active Tasks", 15) == 0) { in_active = true;  continue; }
+        if (strncmp(line, "## ",              3)  == 0) { in_active = false; continue; }
+        if (!in_active) continue;
+        /* Skip blank lines and HTML comments */
+        char *p = line;
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0' || *p == '\n' || *p == '\r') continue;
+        if (strncmp(p, "<!--", 4) == 0) continue;
+        has_tasks = true;
+        break;
+    }
+    fclose(f);
+
+    if (!has_tasks) return NULL;
+
+    /* Inject instruction to process HEARTBEAT.md tasks */
+    const char *msg =
+        "Check HEARTBEAT.md in the workspace. "
+        "Read the file, work through any tasks listed under '## Active Tasks', "
+        "then move completed tasks to '## Completed' and update the file.";
+
+    inbound_msg_t *imsg = inbound_msg_new(
+        "heartbeat", "heartbeat", "heartbeat:tasks", msg, NULL);
+    if (imsg) {
+        if (!bus_publish_inbound(ctx->bus, imsg)) {
+            LOG_WARN("Heartbeat: bus rejected HEARTBEAT.md task injection");
+        }
+    }
+
+    LOG_DEBUG("Heartbeat: injected HEARTBEAT.md tasks into agent bus");
+    return NULL; /* heartbeat system doesn't need a return message here */
+}
+
 /* Signals */
 
 static volatile bool g_running      = true;
@@ -495,9 +557,7 @@ static config_t *boot(const cli_args_t *args) {
     agent_add_system_part(g_agent, mctx);
     free(mctx);
 
-    /* Scheduler */
-    g_scheduler = scheduler_create();
-    scheduler_register_tools(g_scheduler);
+    /* Scheduler — created after bus (see below) */
 
     /* Skills — workspace/skills/<name>/SKILL.md */
     g_skills = skills_create(workspace);
@@ -534,6 +594,17 @@ static config_t *boot(const cli_args_t *args) {
 
     worker_start(g_bus, g_sessions);
     LOG_DEBUG("Bus, sessions, and worker threads ready");
+
+    /* Scheduler — needs bus for agent-type tasks */
+    g_scheduler = scheduler_create(g_bus, workspace);
+    scheduler_register_tools(g_scheduler);
+
+    /* Heartbeat — wire HEARTBEAT.md check and start */
+    g_hb_tasks_ctx.bus = g_bus;
+    snprintf(g_hb_tasks_ctx.path, sizeof(g_hb_tasks_ctx.path),
+             "%s/HEARTBEAT.md", workspace);
+    heartbeat_add_check(g_heartbeat, "tasks", heartbeat_check_tasks, &g_hb_tasks_ctx);
+    heartbeat_start(g_heartbeat);
 
     /* ── Email channel ─────────────────────────────────────────── */
     g_email = email_channel_create(cfg, g_bus, g_allowlist);

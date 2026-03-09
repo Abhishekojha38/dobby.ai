@@ -1,10 +1,21 @@
 /*
  * scheduler.h — Cron-style task scheduler
+ *
+ * Supports two task types:
+ *
+ *   shell  — runs a shell command via fork/exec (original behaviour)
+ *   agent  — posts a natural-language message to the agent via the bus;
+ *            the agent processes it as a normal conversation turn and can
+ *            call any tool (send_email, memory_store, file_write, etc.)
+ *
+ * The agent task type solves the fundamental problem that shell commands
+ * cannot invoke Dobby tools — tools are in-process functions, not binaries.
  */
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
 #include "../tool.h"
+#include "../../bus/bus.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,8 +23,12 @@ extern "C" {
 
 typedef struct scheduler scheduler_t;
 
-/* Create the scheduler. Starts a background thread. */
-scheduler_t *scheduler_create(void);
+/*
+ * Create the scheduler.
+ * bus: required for agent-type tasks; pass NULL to disable agent tasks.
+ * Starts a background thread.
+ */
+scheduler_t *scheduler_create(bus_t *bus, const char *workspace);
 
 /* Register scheduler tools with the tool registry. */
 void scheduler_register_tools(scheduler_t *sched);

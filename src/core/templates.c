@@ -108,7 +108,7 @@ void templates_seed(const char *template_dir,
     if (!workspace_dir || !*workspace_dir) workspace_dir = ".";
 
     /* ── Prompt files ────────────────────────────────────────────── */
-    static const char *top[] = { "SOUL.md", "AGENT.md", "TOOLS.md", NULL };
+    static const char *top[] = { "SOUL.md", "AGENT.md", "TOOLS.md", "HEARTBEAT.md", NULL };
     for (int i = 0; top[i]; i++) {
         char src[512], dst[512];
         snprintf(src, sizeof(src), "%s/%s", template_dir,  top[i]);
