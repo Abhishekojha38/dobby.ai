@@ -13,6 +13,8 @@ You have persistent memory that survives across sessions.
 | `memory/MEMORY.md` | Structured long-term memory — facts, preferences, project context |
 | `memory/HISTORY.md` | Append-only event log — grep-searchable record of past actions |
 
+**memory** folder is located at `{workspace}/memory/`
+
 ## Reading memory
 
 Read the full memory file before answering questions about the user or their projects:
@@ -44,13 +46,6 @@ Use `memory_store` to save facts. Choose the right section:
 | `Project Context` | Active projects, goals, tech stack, decisions |
 | `Important Notes` | Anything else worth remembering |
 
-```
-memory_store(
-    section="Project Context",
-    key="main project",
-    value="Dobby AI agent — local-first agent written in C, Ollama backend"
-)
-```
 
 Write important facts immediately using `memory_store`:
 - User preferences ("I prefer dark mode")
