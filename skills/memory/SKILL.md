@@ -15,12 +15,33 @@ You have persistent memory that survives across sessions.
 
 **memory** folder is located at `{workspace}/memory/`
 
+## Search Past Events
+
+Choose the search method based on file size:
+
+- Small `{workspace}/memory/HISTORY.md`: use `read_file`, then search in-memory
+- Large or long-lived `{workspace}/memory/HISTORY.md`: use the `exec` tool for targeted search
+
+Examples:
+- **Linux/macOS:** `grep -i "keyword" {workspace}/memory/HISTORY.md`
+- **Windows:** `findstr /i "keyword" {workspace}/memory/HISTORY.md`
+- **Cross-platform Python:** `python -c "from pathlib import Path; text = Path('workspace/memory/HISTORY.md').read_text(encoding='utf-8'); print('\n'.join([l for l in text.splitlines() if 'keyword' in l.lower()][-20:]))"`
+
+Prefer targeted command-line search for large history files.
+
+## When to Update MEMORY.md
+
+Write important facts immediately using `edit_file` or `write_file`:
+- User preferences ("I prefer dark mode")
+- Project context ("The API uses OAuth2")
+- Relationships ("Alice is the project lead")
+
 ## Reading memory
 
 Read the full memory file before answering questions about the user or their projects:
 
 ```
-read_file("memory/MEMORY.md")
+read_file("{workspace}/memory/MEMORY.md")
 ```
 
 Search for a specific topic:
@@ -32,7 +53,7 @@ memory_search(query="project name")
 Grep history for past events:
 
 ```
-shell_exec(command="grep -i 'keyword' memory/HISTORY.md")
+shell_exec(command="grep -i 'keyword' {workspace}/memory/HISTORY.md")
 ```
 
 ## Writing memory

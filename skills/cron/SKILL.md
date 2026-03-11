@@ -44,10 +44,10 @@ schedule_control(action="delete", task_id=1)       # remove
 ## 2. Heartbeat Tasks (HEARTBEAT.md)
 
 For one-off or loosely recurring tasks, edit `HEARTBEAT.md` in the workspace.
-Dobby checks this file periodically and works through any active tasks it finds.
+Check this file periodically and work through any active tasks it finds.
 
 ```
-file_read("HEARTBEAT.md")
+file_read("{workspace}/HEARTBEAT.md")
 ```
 
 Add a task under `## Active Tasks`:
