@@ -81,3 +81,20 @@ services:
 volumes:
   dobby-workspace:
     driver: local
+
+  wa-bridge:
+    image: node:20-alpine
+    container_name: dobby-wa-bridge
+    profiles:
+      - whatsapp
+    working_dir: /app
+    volumes:
+      - ./bridge:/app
+      - ~/.dobby/whatsapp-auth:/root/.dobby/whatsapp-auth
+    environment:
+      BRIDGE_PORT: 3001
+      AUTH_DIR: /root/.dobby/whatsapp-auth
+      BRIDGE_TOKEN: ${BRIDGE_TOKEN:-}
+    command: sh -c "npm install && npm run build && npm start"
+    network_mode: host
+    restart: unless-stopped

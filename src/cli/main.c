@@ -53,6 +53,8 @@
 #include "../gateway/gateway.h"
 #include "../channels/email/email_channel.h"
 #include "../tools/email/email_tool.h"
+#include "../channels/whatsapp/whatsapp_channel.h"
+#include "../tools/whatsapp/whatsapp_tool.h"
 #include "../providers/http_client.h"
 #include "../ux/slash_commands.h"
 #include "../ux/typing.h"
@@ -94,7 +96,8 @@ static skills_t    *g_skills    = NULL;
 static heartbeat_t *g_heartbeat = NULL;
 static gateway_t         *g_gateway   = NULL;
 static bus_t             *g_bus        = NULL;
-static email_channel_t   *g_email       = NULL;
+static email_channel_t     *g_email       = NULL;
+static whatsapp_channel_t  *g_whatsapp    = NULL;
 static session_manager_t *g_sessions   = NULL;
 static int                g_memory_slot = -1;
 static char               g_workspace[512] = ".";
@@ -264,6 +267,7 @@ static void cleanup(config_t *cfg) {
     status_shutdown();
     worker_stop();
     email_channel_destroy(g_email);       g_email    = NULL;
+    whatsapp_channel_destroy(g_whatsapp); g_whatsapp = NULL;
     session_manager_destroy(g_sessions);  g_sessions = NULL;
     bus_destroy(g_bus);                   g_bus      = NULL;
     gateway_destroy(g_gateway);
@@ -611,6 +615,12 @@ static config_t *boot(const cli_args_t *args) {
     if (g_email && !email_channel_start(g_email))
         fprintf(stderr, "Warning: email channel failed to start\n");
     email_tool_register(g_email);  /* NULL-safe: shows config error if unconfigured */
+
+    /* WhatsApp channel — optional, requires wa-bridge sidecar */
+    g_whatsapp = whatsapp_channel_create(cfg, g_bus, g_allowlist);
+    if (g_whatsapp && !whatsapp_channel_start(g_whatsapp))
+        fprintf(stderr, "Warning: WhatsApp channel failed to start\n");
+    whatsapp_tool_register(g_whatsapp);  /* NULL-safe */
 
     /* Inject Dobby's own email identity into the system prompt so the
      * agent knows its address and can use send_email correctly.

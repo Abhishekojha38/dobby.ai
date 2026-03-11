@@ -14,6 +14,12 @@ Tool signatures are auto-provided. Only non-obvious constraints are listed.
 - Never edit `MEMORY.md` directly.
 - Sections: User Information, Preferences, Project Context, Important Notes.
 
+## send_whatsapp
+- Dobby tool only.
+- Call via tool interface.
+- Never use in `shell_exec` or scripts.
+**send_whatsapp** — send a WhatsApp message via the bridge. Parameter: to (phone with country code e.g. "919876543210"), text. Never use shell for WhatsApp.
+
 ## send_email
 - Dobby tool only.
 - Call via tool interface.

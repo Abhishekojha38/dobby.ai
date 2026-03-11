@@ -48,11 +48,13 @@ static void *worker_loop(void *arg)
             /* Synchronous caller is blocked in response_pair_wait() — wake it */
             response_pair_deliver(rp, response);   /* transfers ownership */
         } else {
-            /* Async channel: post response to outbound queue */
+            /* Async channel: post response to outbound queue.
+             * Forward inbound metadata so channel-specific routing info
+             * (e.g. replyJid for WhatsApp LID) reaches the dispatcher. */
             outbound_msg_t *out = outbound_msg_new(msg->channel,
                                                     msg->chat_id,
                                                     response ? response : "",
-                                                    NULL);
+                                                    msg->metadata);
             free(response);
             if (out) bus_publish_outbound(w->bus, out);
         }

@@ -54,6 +54,7 @@ add_subdirectory(src/session)
 add_subdirectory(src/channels)
 add_subdirectory(src/channels/email)
 add_subdirectory(src/tools/email)
+add_subdirectory(src/tools/whatsapp)
 add_subdirectory(src/gateway)
 add_subdirectory(src/cli)
 

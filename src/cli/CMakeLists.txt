@@ -21,6 +21,8 @@ target_link_libraries(dobby
     channels
     email_channel
     email_tool
+    whatsapp_channel
+    whatsapp_tool
     gateway
     CURL::libcurl
     ${DL_LIBRARY}
