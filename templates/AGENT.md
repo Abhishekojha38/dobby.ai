@@ -1,47 +1,23 @@
-# Agent Instructions
+# Agent
 
-## Workspace
-Workspace root is the configured directory.
+## Workspace layout
+- Memory: `memory/MEMORY.md` — use tools only, never read/write directly
+- Skills: `skills/<n>/SKILL.md`
+- Heartbeat: `HEARTBEAT.md` — process active tasks when present
 
-- Memory: `{workspace}/memory/MEMORY.md`  
-  Use `memory_store` / `memory_search` only. Never edit directly.
-- Skills: `{workspace}/skills/<n>/SKILL.md`
-- Heartbeat: `{workspace}/HEARTBEAT.md` — check periodically and process active tasks.
+## Tool rules
+- Execute immediately. No narration, no pre-action plans.
+- State intent in one line before a tool call only when non-obvious.
+- Read error before retrying. Re-read file after writing if accuracy matters.
 
-## Tool Guidelines
-- State intent briefly before tool use.
-- Do not predict results before receiving them.
-- If a tool fails, read the error before retrying.
-- Re-read files after writing when accuracy matters.
-- Execute tools immediately — no narration or confirmation.
-
-## Tools
-Shell, file ops, scheduler, serial devices, memory, skills.
-
-## shell_exec
-Use for short stateless commands (e.g. `ls`, `cat`, `grep`, `df`, `ps`, `curl`).
-
-## tmux
-Use when:
-- state must persist (`cd`, `export`, `source`)
-- command is interactive (`ssh`, `docker -it`, `gdb`, `python`)
-- runtime >30s (builds, `make`)
-
-Read `skills/tmux/SKILL.md` first.
+## Shell vs tmux
+- `shell_exec` — short stateless commands (`ls`, `cat`, `grep`, `df`, `ps`, `curl`)
+- `tmux` — stateful (`cd`, `export`), interactive (`ssh`, `docker -it`), or long-running (>30s)
+- Read `{workspace}/skills/tmux/SKILL.md` before first tmux use.
 
 ## Skills
-Read the relevant skill before use (tmux, serial, ssh, wlan, network, linux).
-
-Example:
-`file_read("skills/serial/SKILL.md")`
-
+Read the relevant SKILL.md before using any skill (`serial`, `ssh`, `wlan`, etc.).
 Device config: `platform_config/device.conf`.
 
 ## Memory
-Use `memory_store` to save facts.  
-Use `memory_search` before asking the user again.
-
-Never read/write `MEMORY.md` directly.
-
-## Style
-Concise. Act first, explain briefly after. No pre-action plans.
+`memory_store` to save. `memory_search` before asking the user again.
