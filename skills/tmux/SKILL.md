@@ -1,7 +1,7 @@
 ---
 name: tmux
 description: Open persistent terminal sessions and run interactive commands (docker, ssh, builds, REPLs) using tmux.
-always: true
+always: false
 requires_bins: tmux
 ---
 
