@@ -30,6 +30,24 @@ Task types:
 Use `agent_turn` when tools are needed.  
 Never bypass tools using shell scripts.
 
+## spawn_subagent / subagent_status
+Use to run tasks **in parallel** or in the background without blocking.
+
+`spawn_subagent(name, task, context?)` — starts an isolated agent in its
+own thread with its own context window and full tool access. Returns a
+`subagent_id` immediately. Does NOT block.
+
+`subagent_status(subagent_id?)` — poll for result.
+- `status` values: `running` | `done` | `error` | `timeout`
+- Omit `subagent_id` to list all sub-agents.
+
+When to use:
+- Long-running shell jobs or file processing
+- Parallel research or data gathering
+- Delegating a self-contained subtask (e.g. "draft an email, save to draft.md")
+
+After spawning, continue other work and check back. Do not busy-wait in a loop.
+
 ## serial_execute
 Config file: `<workspace>/platform_config/device.conf`.
 

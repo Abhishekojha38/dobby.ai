@@ -11,6 +11,7 @@
 #include "../core/log.h"
 #include "../core/cJSON.h"
 #include "../tools/scheduler/scheduler.h"
+#include "../tools/subagent/subagent.h"
 #include "../channels/email/email_channel.h"
 #include "../security/allowlist.h"
 
@@ -45,17 +46,18 @@ static const char FALLBACK_HTML[] =
 /* Gateway state */
 
 struct gateway {
-    bus_t           *bus;
-    scheduler_t     *scheduler;
-    email_channel_t *email;
-    allowlist_t     *allowlist;
-    int              port;
-    int              server_fd;
-    volatile bool    running;
-    pthread_t        listener;
-    sem_t            thread_slots;
-    char            *html_path;
-    bool             debug;
+    bus_t            *bus;
+    scheduler_t      *scheduler;
+    subagent_pool_t  *subagents;
+    email_channel_t  *email;
+    allowlist_t      *allowlist;
+    int               port;
+    int               server_fd;
+    volatile bool     running;
+    pthread_t         listener;
+    sem_t             thread_slots;
+    char             *html_path;
+    bool              debug;
 };
 
 typedef struct {
@@ -288,6 +290,13 @@ static void handle_email(int fd, gateway_t *gw)
     send_json_obj(fd, 200, obj);
 }
 
+static void handle_subagents(int fd, gateway_t *gw)
+{
+    char *json = subagent_pool_json(gw->subagents);
+    send_json(fd, 200, json ? json : "[]");
+    free(json);
+}
+
 static void handle_tasks(int fd, gateway_t *gw)
 {
     char *json = scheduler_task_json(gw->scheduler);
@@ -372,6 +381,8 @@ static void *gateway_conn_thread(void *arg)
             send_json(fd, 400, "{\"error\":\"POST required\"}");
     } else if (strcmp(path, "/api/tasks") == 0) {
         handle_tasks(fd, gw);
+    } else if (strcmp(path, "/api/subagents") == 0) {
+        handle_subagents(fd, gw);
     } else if (strcmp(path, "/api/tmux") == 0) {
         handle_tmux(fd, gw);
     } else if (strcmp(path, "/api/email") == 0) {
@@ -434,6 +445,7 @@ static void *gateway_listen_thread(void *arg)
 /* Public API */
 
 gateway_t *gateway_create(bus_t *bus, scheduler_t *scheduler,
+                           subagent_pool_t *subagents,
                            int port, const char *html_path, bool debug,
                            email_channel_t *email, allowlist_t *allowlist)
 {
@@ -442,14 +454,15 @@ gateway_t *gateway_create(bus_t *bus, scheduler_t *scheduler,
         if (env && (!strcmp(env, "1") || !strcasecmp(env, "true")))
             debug = true;
     }
-    gateway_t *gw = calloc(1, sizeof(gateway_t));
-    gw->bus       = bus;
-    gw->scheduler = scheduler;
-    gw->email     = email;
-    gw->allowlist = allowlist;
-    gw->port      = port > 0 ? port : 8080;
-    gw->debug     = debug;
-    gw->html_path = html_path ? strdup(html_path) : NULL;
+    gateway_t *gw  = calloc(1, sizeof(gateway_t));
+    gw->bus        = bus;
+    gw->scheduler  = scheduler;
+    gw->subagents  = subagents;
+    gw->email      = email;
+    gw->allowlist  = allowlist;
+    gw->port       = port > 0 ? port : 8080;
+    gw->debug      = debug;
+    gw->html_path  = html_path ? strdup(html_path) : NULL;
     sem_init(&gw->thread_slots, 0, GATEWAY_MAX_THREADS);
 
     if (debug)

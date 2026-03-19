@@ -14,6 +14,7 @@ target_link_libraries(dobby
     scheduler
     skills
     serial
+    subagent
     heartbeat
     ux
     bus

@@ -45,6 +45,7 @@
 #include "../tools/file_ops/file_tool.h"
 #include "../tools/scheduler/scheduler.h"
 #include "../tools/skills/skills.h"
+#include "../tools/subagent/subagent.h"
 #include "../tools/serial/serial_tool.h"
 #include "../heartbeat/heartbeat.h"
 #include "../bus/bus.h"
@@ -93,6 +94,7 @@ static history_t   *g_history   = NULL;
 static allowlist_t *g_allowlist = NULL;
 static scheduler_t *g_scheduler = NULL;
 static skills_t    *g_skills    = NULL;
+static subagent_pool_t *g_subagents = NULL;
 static heartbeat_t *g_heartbeat = NULL;
 static gateway_t         *g_gateway   = NULL;
 static bus_t             *g_bus        = NULL;
@@ -273,6 +275,7 @@ static void cleanup(config_t *cfg) {
     gateway_destroy(g_gateway);
     heartbeat_destroy(g_heartbeat);
     skills_destroy(g_skills);
+    subagent_pool_destroy(g_subagents); g_subagents = NULL;
     scheduler_destroy(g_scheduler);
     memory_destroy(g_memory);
     agent_destroy(g_agent);
@@ -603,6 +606,12 @@ static config_t *boot(const cli_args_t *args) {
     g_scheduler = scheduler_create(g_bus, workspace);
     scheduler_register_tools(g_scheduler);
 
+    /* Subagent pool — parallel isolated agents, shares provider + tool registry */
+    g_subagents = subagent_pool_create(
+        g_agent, g_provider,
+        config_get_int(cfg, "agent", "subagent_timeout", 0));
+    subagent_register_tools(g_subagents);
+
     /* Heartbeat — wire HEARTBEAT.md check and start */
     g_hb_tasks_ctx.bus = g_bus;
     snprintf(g_hb_tasks_ctx.path, sizeof(g_hb_tasks_ctx.path),
@@ -677,7 +686,7 @@ static void run(const cli_args_t *args, config_t *cfg) {
                  : atoi(env_or_cfg("PORT", cfg, "gateway", "port", "8080"));
         const char *html_path = env_or_cfg("CHAT_HTML", cfg,
                                             "gateway", "html_path", "assets/chat.html");
-        g_gateway = gateway_create(g_bus, g_scheduler, port, html_path,
+        g_gateway = gateway_create(g_bus, g_scheduler, g_subagents, port, html_path,
                                    args->debug_mode, g_email, g_allowlist);
         result_t r = gateway_start(g_gateway);
         if (r.status != OK) {

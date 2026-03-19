@@ -185,6 +185,7 @@ code{font-family:'DM Mono',monospace}
     <button class="tab"     data-p="tasks">Tasks</button>
     <button class="tab"     data-p="email">Email</button>
     <button class="tab"     data-p="tools">Tools</button>
+    <button class="tab"     data-p="subagents">Subagents</button>
     <button class="tab"     data-p="system">System</button>
   </nav>
 
@@ -275,6 +276,26 @@ code{font-family:'DM Mono',monospace}
   </div>
 </div>
 
+<!-- Subagents -->
+<div id="panel-subagents" class="panel">
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch">
+      <span class="ct">Active Sub-Agents</span>
+      <span class="vchip" id="sa-count" style="margin-left:8px">0</span>
+    </div>
+    <div class="cb" id="sa-list"><div class="ce"><div class="ic">🤖</div>No sub-agents running</div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct">About Sub-Agents</span></div>
+    <div class="cb" style="font-size:13px;color:var(--muted,#888);line-height:1.7">
+      The orchestrator can call <strong style="color:#a855f7">spawn_subagent</strong> to
+      delegate a task to a parallel worker with its own isolated context window and full
+      tool access. The orchestrator gets an ID immediately and continues other work.
+      Results are collected via <strong style="color:#a855f7">subagent_status</strong>.
+    </div>
+  </div>
+</div>
+
 <!-- System -->
 <div id="panel-system" class="panel">
   <div class="g4" style="margin-bottom:14px">
@@ -308,7 +329,7 @@ code{font-family:'DM Mono',monospace}
 'use strict';
 
 /* ── State ──────────────────────────────────────── */
-const S = { status:null, tasks:[], tmux:[], email:null };
+const S = { status:null, tasks:[], tmux:[], email:null, subagents:[] };
 const emailLog = { inbox:[], sent:[] };
 
 /* ── Nav ────────────────────────────────────────── */
@@ -323,6 +344,7 @@ function go(name) {
   if(name==='tools')  drawTools();
   if(name==='tasks')  drawTasksFull();
   if(name==='system') drawSystem();
+  if(name==='subagents') drawSubagents();
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>go(b.dataset.p)));
 
@@ -535,9 +557,50 @@ csend.addEventListener('click',send);
 cinp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
 cinp.addEventListener('input',()=>{cinp.style.height='auto';cinp.style.height=Math.min(cinp.scrollHeight,140)+'px';});
 
+/* ── Subagents ──────────────────────────────────── */
+async function pollSubagents(){
+  const d=await api('/api/subagents');
+  S.subagents=Array.isArray(d)?d:[];
+  if(document.getElementById('panel-subagents').classList.contains('on')) drawSubagents();
+}
+
+function drawSubagents(){
+  const el=document.getElementById('sa-list');
+  const cnt=document.getElementById('sa-count');
+  if(!el) return;
+  const list=S.subagents||[];
+  if(cnt) cnt.textContent=list.length;
+  if(!list.length){
+    el.innerHTML='<div class="ce"><div class="ic">🤖</div>No sub-agents running</div>';
+    return;
+  }
+  const stIcon={running:'⚡',done:'✅',error:'❌',timeout:'⏱'};
+  const stCol ={running:'#a855f7',done:'#22c55e',error:'#ef4444',timeout:'#f59e0b'};
+  el.innerHTML=list.map(sa=>{
+    const ic=stIcon[sa.status]||'🤖';
+    const col=stCol[sa.status]||'#888';
+    const elapsed=sa.elapsed_sec<60?Math.round(sa.elapsed_sec)+'s'
+                 :sa.elapsed_sec<3600?Math.round(sa.elapsed_sec/60)+'m'
+                 :Math.round(sa.elapsed_sec/3600)+'h';
+    const resultHtml=(sa.status!=='running'&&sa.result)
+      ?`<div style="margin-top:6px;padding:6px 8px;background:rgba(0,0,0,.3);border-radius:4px;font-family:monospace;font-size:11px;color:#aaa;white-space:pre-wrap;word-break:break-all;max-height:72px;overflow-y:auto">${esc(sa.result.slice(0,320))}${sa.result.length>320?'\n…':''}</div>`
+      :'';
+    return `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span>${ic}</span>
+        <span style="font-weight:700;font-size:13px">#${sa.id} ${esc(sa.name||'')}</span>
+        <span style="font-size:11px;padding:1px 7px;border-radius:12px;background:rgba(255,255,255,.08);color:${col}">${sa.status}</span>
+        <span style="font-size:11px;color:#555">${elapsed}</span>
+      </div>
+      <div style="font-size:12px;color:#666;margin-top:3px;padding-left:22px">${esc((sa.task||'').slice(0,100))}${(sa.task||'').length>100?'…':''}</div>
+      ${resultHtml}
+    </div>`;
+  }).join('');
+}
+
 /* ── Boot ───────────────────────────────────────── */
 async function boot(){
-  await Promise.all([pollStatus(),pollTasks(),pollTmux(),pollEmail()]);
+  await Promise.all([pollStatus(),pollTasks(),pollTmux(),pollEmail(),pollSubagents()]);
   addMsg('agent','Hi! I\'m Dobby. How can I help?');
 }
 boot();
@@ -545,6 +608,7 @@ setInterval(pollStatus,5000);
 setInterval(pollTasks,8000);
 setInterval(pollTmux,10000);
 setInterval(pollEmail,15000);
+setInterval(pollSubagents,6000);
 </script>
 </body>
 </html>
