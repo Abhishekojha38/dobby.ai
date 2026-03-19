@@ -41,6 +41,9 @@ Dobby is a self-hosted AI agent daemon written in C. It runs continuously in the
 ### Email Interface
 <img src="assets/Email.png" alt="Dobby Email" width="50%" />
 
+### Yocto Build Interface
+<img src="assets/yocto-build.png" alt="Dobby Yocto" width="50%" />
+
 ---
 
 ## Quick Start
