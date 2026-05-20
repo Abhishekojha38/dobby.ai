@@ -1,8 +1,11 @@
 ---
 name: weather
-description: Get current weather and forecasts (no API key required).
-homepage: https://wttr.in/:help
-metadata: {"dobby":{"emoji":"🌤️","requires":{"bins":["curl"]}}}
+description: "Retrieve current temperature, humidity, wind, and multi-day forecasts for any location worldwide. No API key required. Use when the user asks about weather, temperature, rain, forecast, climate conditions, or says things like 'what's the weather in [city]', 'will it rain tomorrow', or 'check the forecast'."
+metadata:
+  version: "1.0.0"
+  dobby.emoji: "🌤️"
+  dobby.requires.bins: "curl"
+  homepage: "https://wttr.in/:help"
 ---
 
 # Weather
